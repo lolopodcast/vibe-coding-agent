@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="siteTitle">Vibe Coding AI Agent 雙語學習平台</title>
+  <meta name="description" content="專為商管學生設計的 Vibe Coding AI Agent 雙語學習平台，包含語音導覽、翻轉學習卡、互動實驗室與測驗歷程。 Architect: Prof. Shihmin Lo, NCNU.">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="light-blueprint-theme">
+
+  <!-- Header 頂列 -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-text">
+          <h1>Vibe Coding AI Agent</h1>
+        </div>
+      </div>
+
+      <!-- 頁首五大主題導覽列 -->
+      <nav class="main-nav">
+        <a href="#summary" class="nav-link active" data-i18n="navSummary">執行摘要</a>
+        <a href="#modules" class="nav-link" data-i18n="navModules">核心模組</a>
+        <a href="#lab" class="nav-link" data-i18n="navLab">互動實驗室</a>
+        <a href="#resources" class="nav-link" data-i18n="navResources">系統藍圖</a>
+        <a href="#tracker" class="nav-link" data-i18n="navTracker">學習歷程</a>
+      </nav>
+
+      <div class="header-actions">
+        <!-- 輕量語音導覽區 -->
+        <div class="mini-audio-ctrl">
+          <button class="btn-mini-speech" id="btnPlaySpeech" title="播放語音"><i data-lucide="volume-2" size="16"></i></button>
+          <button class="btn-mini-speech" id="btnPauseSpeech" title="暫停"><i data-lucide="pause" size="16"></i></button>
+          <button class="btn-mini-speech" id="btnStopSpeech" title="停止"><i data-lucide="square" size="16"></i></button>
+          <span id="audioStatusText" style="font-size: 11.5px; font-weight: 600; color: var(--color-primary-dark); padding: 0 4px;" data-i18n="audioIdle">語音導覽就緒</span>
+          <select id="speechSpeedSelect" class="speed-select-mini">
+            <option value="0.8">0.8x</option>
+            <option value="1.0" selected>1.0x</option>
+            <option value="1.2">1.2x</option>
+            <option value="1.5">1.5x</option>
+          </select>
+        </div>
+
+        <!-- 雙語切換 -->
+        <button class="lang-switch-btn" id="langToggleBtn">
+          <span id="langLabel">EN / 繁中</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 執行摘要 -->
+  <section id="summary" class="section hero-section">
+    <div class="container">
+      <div class="hero-card">
+        <h2 class="hero-title" data-i18n="heroTitle">告別「寫行行語法」，邁向「意圖與架構導航」的 Vibe Coding 時代</h2>
+        <p class="hero-desc" data-i18n="heroDesc">專為程式零基礎的商管學生設計。將 AI Agent 視為【馬車到汽車】的典範轉移，學會運用三大角色（管家、教練、工程師團隊）與四大工程要素，輕鬆掌控自動化系統開發與維護。</p>
+        <div class="hero-btns">
+          <a href="#modules" class="btn btn-primary" data-i18n="btnStartLearn">開始學習課程</a>
+          <button class="btn btn-secondary" id="btnListenSummary" data-i18n="btnListenSummary">🔊 朗讀全站總導覽</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 核心主題學習模組 -->
+  <section id="modules" class="section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title" data-i18n="modSectionTitle">核心主題學習模組</h2>
+        <p class="section-subtitle" data-i18n="modSectionSubtitle">點擊切換各模組，包含關鍵字摘要、說明、翻轉記憶卡與測驗。</p>
+      </div>
+
+      <!-- Sticky 目錄導覽列 -->
+      <div class="sticky-module-nav">
+        <div class="module-tabs" id="moduleTabs">
+          <button class="mod-tab active" data-mod="m1" data-i18n="tabM1">模組一：典範轉移比喻</button>
+          <button class="mod-tab" data-mod="m2" data-i18n="tabM2">模組二：四大工程要素</button>
+          <button class="mod-tab" data-mod="m3" data-i18n="tabM3">模組三：AI 三重角色</button>
+          <button class="mod-tab" data-mod="m4" data-i18n="tabM4">模組四：晨報 Agent 實戰</button>
+        </div>
+      </div>
+
+      <div class="module-display" id="moduleDisplay"></div>
+    </div>
+  </section>
+
+  <!-- 互動實驗室 -->
+  <section id="lab" class="section">
+    <div class="container">
+      <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+          <h2 class="section-title" data-i18n="labTitle">互動實驗室：無程式碼主題晨報模擬器</h2>
+          <p class="section-subtitle" data-i18n="labSubtitle">體驗如何「修改 KB 檔案」即可改變 AI Agent 抓取與整理新聞的行為。</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btnListenLab" data-i18n="btnListenLab" style="margin-bottom: 4px;">🔊 朗讀實驗室指南</button>
+      </div>
+
+      <div class="lab-grid">
+        <div class="lab-card">
+          <h3 style="font-size: 15.5px; font-weight: 700; margin-bottom: 10px;" data-i18n="labConfigHeader">設定檔：KB/theme_config.md</h3>
+          <label class="form-label" data-i18n="labTopicLabel" style="font-size: 12.5px; color: var(--color-text-muted);">選擇或輸入您今日關注的新聞主題：</label>
+          <div class="preset-pills" style="display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 10px 0;">
+            <button class="preset-btn active" data-topic="半導體產業趨勢 + 實習職缺" style="padding: 3px 9px; border-radius: 12px; font-size: 11.5px; border: 1px solid var(--border-light); cursor: pointer;" data-i18n="presetTopic1">半導體 + 實習</button>
+            <button class="preset-btn" data-topic="ESG永續發展 + 企業案例" style="padding: 3px 9px; border-radius: 12px; font-size: 11.5px; border: 1px solid var(--border-light); cursor: pointer;" data-i18n="presetTopic2">ESG 永續</button>
+            <button class="preset-btn" data-topic="AI 行銷自動化 + 競賽資訊" style="padding: 3px 9px; border-radius: 12px; font-size: 11.5px; border: 1px solid var(--border-light); cursor: pointer;" data-i18n="presetTopic3">AI 行銷競賽</button>
+          </div>
+
+          <textarea id="labCustomTheme" class="form-textarea" rows="3" data-i18n="placeholderTheme" placeholder="在此自訂當日主題..."></textarea>
+
+          <div style="font-size: 12px; display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px;">
+            <label><input type="checkbox" id="chkHarnessGuard" checked> <span data-i18n="labHarnessGuard">開啟 Harness 防禦網 (Input Sanitization 與資安遮蔽)</span></label>
+            <label><input type="checkbox" id="chkCopyrightDef" checked> <span data-i18n="labCopyrightDef">開啟著作權防衛 (衍生摘要與強制附原文連結)</span></label>
+          </div>
+
+          <button class="btn btn-primary w-full" id="btnRunAgentSim" data-i18n="btnRunSim">啟動 Agent 運算流程 (ReAct Loop)</button>
+        </div>
+
+        <div class="lab-card">
+          <h3 style="font-size: 15.5px; font-weight: 700; margin-bottom: 10px;" data-i18n="labOutputHeader">Agent 執行日誌與晨報交付物</h3>
+          <div class="sim-steps" id="simStepsLog">
+            <div data-i18n="simPlaceholder" style="color: var(--color-text-subtle);">點擊「啟動 Agent」觀察自動化運算流程...</div>
+          </div>
+          <div class="sim-final-result hidden" id="simFinalResult" style="margin-top: 10px;">
+            <div class="markdown-preview" id="simDigestOutput"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 藍圖與資源 -->
+  <section id="resources" class="section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title" data-i18n="resTitle">系統藍圖與外部資源</h2>
+        <p class="section-subtitle" data-i18n="resSubtitle">檢閱高解析度系統工程藍圖 (Blueprint SVG) 與教學手冊文件。</p>
+      </div>
+
+      <div class="svg-frame-container">
+        <div class="svg-wrapper">
+          <img src="vibe_coding_knowledge_base.svg" alt="Vibe Coding Architecture Blueprint" class="responsive-svg">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 學習歷程分析細節 -->
+  <section id="tracker" class="section">
+    <div class="container">
+      <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+          <h2 class="section-title" data-i18n="trackTitle">學習歷程記錄與成果匯出</h2>
+          <p class="section-subtitle" data-i18n="trackSubtitle">記錄您完成的學習時間、點擊數、記憶卡與測驗分數。</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btnListenTracker" data-i18n="btnListenTracker" style="margin-bottom: 4px;">🔊 朗讀歷程統計</button>
+      </div>
+
+      <div class="tracker-dashboard">
+        <div class="tracker-card">
+          <div class="t-val" id="trackProgressVal">0 / 4</div>
+          <div class="t-lbl" data-i18n="trackModulesRead">模組完成進度</div>
+        </div>
+
+        <div class="tracker-card">
+          <div class="t-val" id="trackQuizScoreVal">0 pts</div>
+          <div class="t-lbl" data-i18n="trackQuizTotal">測驗總得分</div>
+        </div>
+
+        <div class="tracker-card">
+          <div class="t-val" id="trackLabCountVal">0 次</div>
+          <div class="t-lbl" data-i18n="trackLabRuns">實驗室模擬次數</div>
+        </div>
+      </div>
+
+      <!-- 詳細分區統計表格 -->
+      <table class="tracker-detail-table">
+        <thead>
+          <tr>
+            <th data-i18n="thSection">單元/分區 (Section)</th>
+            <th data-i18n="thTime">累積學習時間 (Time)</th>
+            <th data-i18n="thClicks">點擊互動次數 (Clicks)</th>
+            <th data-i18n="thScore">測驗得分 (Quiz Score)</th>
+          </tr>
+        </thead>
+        <tbody id="trackerDetailBody">
+          <!-- Rendered by JS -->
+        </tbody>
+      </table>
+
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 18px;">
+        <button class="btn btn-primary" id="btnExportProgress" data-i18n="btnExportJSON">匯出學習報告 (JSON)</button>
+        <button class="btn btn-secondary" id="btnPrintReport" data-i18n="btnPrintPDF">列印 / 儲存 PDF</button>
+        <button class="btn btn-secondary" id="btnResetTrack" data-i18n="btnResetTrack">重置歷程</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 頁尾 -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-top">
+        <div style="font-weight: 700; font-size: 14.5px;">Vibe Coding AI Agent Handbook</div>
+        <button class="btn-top" id="btnBackTop">▲ <span data-i18n="btnBackTop">回到頁首</span></button>
+      </div>
+      <div class="footer-bottom">
+        <div>National Chi Nan University (NCNU) • 國立暨南國際大學</div>
+        <div>
+          Architect: <a href="https://www.ibs.ncnu.edu.tw/index.php/faculty/tenured-professor/299-smlo" target="_blank" rel="noopener noreferrer" class="f-link">Prof. Shihmin Lo</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
