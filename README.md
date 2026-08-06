@@ -1,20 +1,23 @@
-# 🌅 每日晨報 AI Agent 專案 (Morning Digest Agent)
+# Vibe Coding AI Agent 雙語互動學習平台
 
-專為商管大學生設計的 **Vibe Coding 實戰專案**。利用 AI Agent 協作（管家 🎩 / 教練 🧢 / 工程師 🛠️），建構一個可動態無 Code 調整主題的自動化晨報系統。
-
----
-
-## 📂 專案架構說明
-
-- 📄 `KB/theme_config.md`：**【主題開關】** 隨時修改文字即可調整晨報關注的新聞領域（如半導體、ESG、實習職缺）。
-- 📄 `KB/business_rules.md`：**【排版與規範】** 定義晨報格式、字數上限與資安合規要求。
-- 📄 `skills/morning-digest/SKILL.md`：**【SOP 腳本】** 引導 Agent 進行「抓資料 ➡️ 摘要 ➡️ 自檢 (QC) ➡️ LINE 發送」的完整流程。
-- 🔐 `.env.example`：API 金鑰設定範例檔。
+> **Architect**: Prof. Shihmin Lo, NCNU (國立暨南國際大學 羅時敏教授)  
+> 專為程式零基礎的商管學生設計的現代 Vibe Coding AI Agent 雙語互動學習平台。
 
 ---
 
-## 🚀 快速上手 (Vibe Coding 指令)
+### 🌐 線上學習網站入口 (Live Demo)
 
-開啟你的 AI Coding Agent (Claude Code / Antigravity)，對它說：
+* 🚀 **GitHub Pages 線上網站**：[https://lolopodcast.github.io/vibe_coding_agent/](https://lolopodcast.github.io/vibe-coding-agent/)
 
-> 「請作為我的管家、教練與工程師團隊，讀取本專案下的 `KB/` 目錄與 `skills/morning-digest/SKILL.md`，協助我完善資料抓取邏輯與測試部署！」
+---
+
+### 🎨 平台亮點與規格
+
+1. **全點字即讀 (Click-to-Speak Anything)**：
+   - 點擊畫面上任何文字（標題、內文、記憶卡、測驗題解析），系統自動用語音朗讀並以黃色高亮動態突顯。
+2. **全介面 100% 雙語切換 (Full Bilingual i18n)**：
+   - 支援繁體中文 (`zh-TW`) 與英文 (`en-US`) 一鍵流暢切換。
+3. **極簡淡雅藍圖視覺 (Light Blueprint Theme)**：
+   - 柔和藍圖風格 + Sticky 模組選單（自動置頂與滾動居中）。
+4. **智財權防衛機制 (Copyright Defense)**：
+   - 右鍵與快捷鍵彈出友善版權宣告：`Intellectual Property of Architect: Prof. Shihmin Lo, NCNU`。
