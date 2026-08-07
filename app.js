@@ -1,8 +1,8 @@
 /**
  * Vibe Coding AI Agent 雙語學習平台核心引擎
- * - 智慧全域視聽同步語音導覽 (Smart Auto-Scroll Voice Tour)
- * - 全點字即讀 (Click-to-Speak Anything)
- * - 雙語對應 CSV 學習報告匯出 (檔名: VibeAI_組別-姓名-日期.csv)
+ * - 智慧全域視聽同步語音導覽 (Smart Auto-Scroll Voice Tour with Pause/Resume & Stop-Reset)
+ * - 模組動態切換語音即時同步 (Dynamic Module Voice Sync)
+ * - 清秀典雅圖示與全點字即讀
  */
 
 let currentLang = 'zh';
@@ -11,6 +11,7 @@ let speechSynth = window.speechSynthesis;
 let currentUtterance = null;
 let isSpeaking = false;
 let isTourActive = false;
+let isPaused = false;
 let availableVoices = [];
 let activeSpeakingElement = null;
 
@@ -81,8 +82,8 @@ const i18n = {
     heroPill: 'AI Agent 現代導航哲學',
     heroTitle: '告別「寫行行語法」，邁向「意圖與架構導航」的 Vibe Coding 時代',
     heroDesc: '專為程式零基礎的商管學生設計。將 AI Agent 視為【馬車到汽車】的典範轉移，學會運用三大角色（管家、教練、工程師團隊）與四大工程要素，輕鬆掌控自動化系統開發與維護。',
-    btnStartLearn: '開始學習課程', btnListenSummary: '🔊 朗讀全站總導覽',
-    btnListenModule: '🔊 朗讀本單元內容', btnListenLab: '🔊 朗讀實驗室指南', btnListenTracker: '🔊 朗讀歷程統計',
+    btnStartLearn: '開始學習課程', btnListenSummary: '朗讀全站總導覽',
+    btnListenModule: '朗讀本單元內容', btnListenLab: '朗讀實驗室指南', btnListenTracker: '朗讀歷程統計',
     modSectionTitle: '核心主題學習模組', modSectionSubtitle: '點擊切換各模組，包含關鍵字摘要、說明、翻轉記憶卡與測驗。點擊畫面上任何文字即可朗讀！',
     tabM1: '模組一：典範轉移比喻', tabM2: '模組二：四大工程要素', tabM3: '模組三：AI 三重角色', tabM4: '模組四：晨報 Agent 實戰',
     cardsHeader: '觀念翻轉記憶卡 (點擊卡片翻面)',
@@ -108,8 +109,8 @@ const i18n = {
     heroPill: 'Modern Navigation Philosophy',
     heroTitle: 'Shift to Intent & Architecture Navigation (Vibe Coding)',
     heroDesc: 'Designed for business students with zero coding background. View AI Agents as a shift from carriages to automobiles. Master 3 roles and 4 pillars for sustainable automation.',
-    btnStartLearn: 'Start Learning', btnListenSummary: '🔊 Read Full Course Tour',
-    btnListenModule: '🔊 Read This Module', btnListenLab: '🔊 Read Lab Guide', btnListenTracker: '🔊 Read Progress Report',
+    btnStartLearn: 'Start Learning', btnListenSummary: 'Read Full Course Tour',
+    btnListenModule: 'Read This Module', btnListenLab: 'Read Lab Guide', btnListenTracker: 'Read Progress Report',
     modSectionTitle: 'Core Learning Modules', modSectionSubtitle: 'Explore keywords, detailed explanations, flashcards, and quizzes. Click any text to hear it read aloud!',
     tabM1: 'Module 1: Metaphor Shift', tabM2: 'Module 2: 4 Pillars', tabM3: 'Module 3: 3 AI Roles', tabM4: 'Module 4: Morning Digest Agent',
     cardsHeader: 'Concept Flashcards (Click to flip)',
@@ -314,7 +315,7 @@ function initUserScrollInterceptor() {
   window.addEventListener('scroll', () => {
     if (isProgrammaticScrolling) return;
 
-    if (isTourActive) {
+    if (isTourActive && !isPaused) {
       clearTimeout(userScrollTimeout);
       userScrollTimeout = setTimeout(() => {
         const visibleIdx = getCurrentVisibleSectionIndex();
@@ -397,7 +398,7 @@ function renderModule(modId) {
     <div class="module-card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <h3 style="font-size: 19px; font-weight: 800; color: var(--color-text-main);">${mod.title[currentLang]}</h3>
-        <button onclick="speakText('${mod.title[currentLang]}. ${mod.summary[currentLang]}')" class="btn btn-secondary btn-sm" style="font-size: 12px; padding: 4px 10px;">${i18n[currentLang].btnListenModule}</button>
+        <button onclick="speakText('${mod.title[currentLang]}. ${mod.summary[currentLang]}')" class="btn btn-secondary btn-sm" style="font-size: 12px; padding: 4px 10px;"><i data-lucide="volume-2" size="14"></i> ${i18n[currentLang].btnListenModule}</button>
       </div>
       <div class="mod-keywords">${keywordsHTML}</div>
       <p style="font-size: 14px; font-weight: 600; color: var(--color-primary-dark); margin-bottom: 10px;">${mod.summary[currentLang]}</p>
@@ -415,6 +416,12 @@ function renderModule(modId) {
       </div>
     </div>
   `;
+  lucide.createIcons();
+
+  // 若目前正在導覽模組分區，切換模組一二三四時即刻切換語音朗讀最新模組！
+  if (isTourActive && tourSections[currentTourSectionIndex] === 'modules') {
+    speakSectionTour(currentTourSectionIndex);
+  }
 }
 
 window.handleFlipCard = function(cardEl, modId, cardIdx) {
@@ -464,14 +471,17 @@ function setupEventListeners() {
     });
   }
 
+  // 播放 / 暫停 (接續往下朗讀)
   document.getElementById('btnGlobalSpeechToggle').addEventListener('click', toggleGlobalSpeechTour);
+  // 停止按鈕 (回到當前顯示區塊頂端並重置)
+  document.getElementById('btnGlobalSpeechStop').addEventListener('click', resetAndStopTour);
 
   document.getElementById('langToggleBtn').addEventListener('click', () => {
     currentLang = currentLang === 'zh' ? 'en' : 'zh';
     updateUIStrings();
     renderModule(currentModule);
     updateTrackerUI();
-    if (isTourActive) speakSectionTour(currentTourSectionIndex);
+    if (isTourActive && !isPaused) speakSectionTour(currentTourSectionIndex);
   });
 
   document.getElementById('moduleTabs').addEventListener('click', (e) => {
@@ -515,23 +525,51 @@ function setupEventListeners() {
   });
 }
 
+/* ================= 智慧全域視聽同步導覽的核心 Logic ================= */
+
 function toggleGlobalSpeechTour() {
-  if (isTourActive) {
-    stopGlobalTour();
+  if (speechSynth && speechSynth.paused) {
+    // 若處於暫停狀態，恢復接續往下朗讀
+    speechSynth.resume();
+    isPaused = false;
+    isTourActive = true;
+    updateAudioToggleButtonState(true);
+    return;
+  }
+
+  if (isSpeaking && isTourActive && !isPaused) {
+    // 朗讀中點擊 ➔ 暫停
+    speechSynth.pause();
+    isPaused = true;
+    updateAudioToggleButtonState(false);
   } else {
+    // 從當前可見區塊頂端開始
     currentTourSectionIndex = getCurrentVisibleSectionIndex();
+    isPaused = false;
     startGlobalTour();
+  }
+}
+
+function resetAndStopTour() {
+  stopGlobalTour();
+  // 將視角定位至當前區塊頂端
+  const currentSecId = tourSections[currentTourSectionIndex];
+  const targetEl = document.getElementById(currentSecId);
+  if (targetEl) {
+    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
 
 function startGlobalTour() {
   isTourActive = true;
+  isPaused = false;
   updateAudioToggleButtonState(true);
   speakSectionTour(currentTourSectionIndex);
 }
 
 function stopGlobalTour() {
   isTourActive = false;
+  isPaused = false;
   stopSpeech();
   updateAudioToggleButtonState(false);
 }
@@ -550,7 +588,7 @@ function updateAudioToggleButtonState(playing) {
 }
 
 function speakSectionTour(sectionIdx) {
-  if (!isTourActive) return;
+  if (!isTourActive || isPaused) return;
 
   const secId = tourSections[sectionIdx];
   const targetEl = document.getElementById(secId);
@@ -598,7 +636,7 @@ function speakSectionTour(sectionIdx) {
   }
 
   speakTextWithElement(textToRead, targetEl, () => {
-    if (isTourActive) {
+    if (isTourActive && !isPaused) {
       if (sectionIdx + 1 < tourSections.length) {
         currentTourSectionIndex = sectionIdx + 1;
         speakSectionTour(currentTourSectionIndex);
@@ -726,6 +764,7 @@ function stopSpeech() {
   if (speechSynth) {
     speechSynth.cancel();
     isSpeaking = false;
+    isPaused = false;
     if (activeSpeakingElement) {
       activeSpeakingElement.classList.remove('speaking-highlight');
       activeSpeakingElement = null;
@@ -782,12 +821,10 @@ function exportProgressCSV() {
   const dd = String(d.getDate()).padStart(2, '0');
   const dateStr = `${yyyy}${mm}${dd}`;
 
-  // 檔名規格：VibeAI_組別-姓名-日期.csv
   const fileName = `VibeAI_${group}-${name}-${dateStr}.csv`;
 
   const totalScore = Object.values(trackerData.quizScores).reduce((a, b) => a + b, 0);
 
-  // CSV 表頭與資料列 (包含雙語對應欄位)
   const rows = [
     ['Section_單元分區', 'Time_停留時間(秒)', 'Clicks_點擊互動次數', 'QuizScore_測驗得分', 'CardsFlipped_記憶卡翻牌數', 'LabSims_實驗室模擬數'],
     ['Total_總計統計', trackerData.totalTime, trackerData.totalClicks, totalScore, Object.values(trackerData.cardsRead).reduce((a,b)=>a+b,0), trackerData.labRuns],
@@ -798,7 +835,7 @@ function exportProgressCSV() {
     ['Interactive Lab_互動實驗室', trackerData.moduleTimes.lab || 0, trackerData.moduleClicks.lab || 0, '-', '-', trackerData.labRuns]
   ];
 
-  let csvContent = "\uFEFF"; // UTF-8 BOM 防亂碼標頭
+  let csvContent = "\uFEFF";
   rows.forEach(row => {
     csvContent += row.map(item => `"${String(item).replace(/"/g, '""')}"`).join(",") + "\n";
   });
