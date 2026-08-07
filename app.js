@@ -1,8 +1,9 @@
 /**
  * Vibe Coding AI Agent 雙語學習平台核心引擎
- * - 智慧全域視聽同步語音導覽 (Smart Auto-Scroll Voice Tour with Pause/Resume & Stop-Reset)
- * - 模組動態切換語音即時同步 (Dynamic Module Voice Sync)
- * - 清秀典雅圖示與全點字即讀
+ * - 全頁首導覽滾動連動反白與 RWD 水平居中
+ * - 模組一二三四連續導讀與視聽 Tab 自動居中
+ * - 頁頂判定修復 (從執行摘要開啟全導覽)
+ * - 全點字即讀與雙語對應 CSV 匯出
  */
 
 let currentLang = 'zh';
@@ -18,8 +19,10 @@ let activeSpeakingElement = null;
 let isProgrammaticScrolling = false;
 let userScrollTimeout = null;
 let currentTourSectionIndex = 0;
+let currentSubModuleIndex = 0; // 追蹤模組一二三四內部的連續導讀子索引 (0: m1, 1: m2, 2: m3, 3: m4)
 
 const tourSections = ['summary', 'modules', 'lab', 'resources', 'tracker'];
+const moduleSubKeys = ['m1', 'm2', 'm3', 'm4'];
 
 function initSpeechVoices() {
   if (!speechSynth) return;
@@ -313,6 +316,9 @@ function initClickToSpeak() {
 
 function initUserScrollInterceptor() {
   window.addEventListener('scroll', () => {
+    // 滾動即時同步高亮頁首主選單反白與 RWD 水平居中
+    syncHeaderNavWithScroll();
+
     if (isProgrammaticScrolling) return;
 
     if (isTourActive && !isPaused) {
@@ -321,6 +327,7 @@ function initUserScrollInterceptor() {
         const visibleIdx = getCurrentVisibleSectionIndex();
         if (visibleIdx !== -1 && visibleIdx !== currentTourSectionIndex) {
           currentTourSectionIndex = visibleIdx;
+          currentSubModuleIndex = 0;
           speakSectionTour(currentTourSectionIndex);
         }
       }, 250);
@@ -328,7 +335,30 @@ function initUserScrollInterceptor() {
   });
 }
 
+// 頁首 Header 導覽列跟隨畫面滾動自動高亮反白與 RWD 居中
+function syncHeaderNavWithScroll() {
+  const visibleIdx = getCurrentVisibleSectionIndex();
+  const currentSecId = tourSections[visibleIdx];
+
+  const navLinks = document.querySelectorAll('.main-nav .nav-link');
+  navLinks.forEach(link => {
+    const targetHref = link.getAttribute('href').replace('#', '');
+    if (targetHref === currentSecId) {
+      if (!link.classList.contains('active')) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        link.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
+  });
+}
+
 function getCurrentVisibleSectionIndex() {
+  // 強制修復：若在頁面最頂端 (Y軸滾動小於 120px)，必定判定為 0 (執行摘要)
+  if (window.scrollY < 120) {
+    return 0;
+  }
+
   const windowCenter = window.innerHeight / 2;
   for (let i = 0; i < tourSections.length; i++) {
     const el = document.getElementById(tourSections[i]);
@@ -365,6 +395,16 @@ function renderModule(modId) {
     trackerData.modulesCompleted.push(modId);
     saveTrackerData();
   }
+
+  // 同步連動更新模組 Tab 高亮與 RWD 自動水平置中
+  document.querySelectorAll('.mod-tab').forEach(b => {
+    if (b.getAttribute('data-mod') === modId) {
+      b.classList.add('active');
+      b.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    } else {
+      b.classList.remove('active');
+    }
+  });
 
   const keywordsHTML = mod.keywords.map(kw => `<span class="kw-badge">#${kw}</span>`).join('');
   
@@ -417,11 +457,6 @@ function renderModule(modId) {
     </div>
   `;
   lucide.createIcons();
-
-  // 若目前正在導覽模組分區，切換模組一二三四時即刻切換語音朗讀最新模組！
-  if (isTourActive && tourSections[currentTourSectionIndex] === 'modules') {
-    speakSectionTour(currentTourSectionIndex);
-  }
 }
 
 window.handleFlipCard = function(cardEl, modId, cardIdx) {
@@ -471,9 +506,7 @@ function setupEventListeners() {
     });
   }
 
-  // 播放 / 暫停 (接續往下朗讀)
   document.getElementById('btnGlobalSpeechToggle').addEventListener('click', toggleGlobalSpeechTour);
-  // 停止按鈕 (回到當前顯示區塊頂端並重置)
   document.getElementById('btnGlobalSpeechStop').addEventListener('click', resetAndStopTour);
 
   document.getElementById('langToggleBtn').addEventListener('click', () => {
@@ -487,10 +520,14 @@ function setupEventListeners() {
   document.getElementById('moduleTabs').addEventListener('click', (e) => {
     const btn = e.target.closest('.mod-tab');
     if (btn) {
-      document.querySelectorAll('.mod-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      renderModule(btn.getAttribute('data-mod'));
+      const selectedModKey = btn.getAttribute('data-mod');
+      renderModule(selectedModKey);
+
+      // 若手動切換模組頁籤且導覽進行中，重置子導覽索引為手動選擇的模組！
+      if (isTourActive) {
+        currentSubModuleIndex = moduleSubKeys.indexOf(selectedModKey);
+        speakSectionTour(currentTourSectionIndex);
+      }
     }
   });
 
@@ -505,14 +542,17 @@ function setupEventListeners() {
   document.getElementById('btnRunAgentSim').addEventListener('click', runAgentSimulator);
   document.getElementById('btnListenSummary').addEventListener('click', () => {
     currentTourSectionIndex = 0;
+    currentSubModuleIndex = 0;
     startGlobalTour();
   });
   document.getElementById('btnListenLab').addEventListener('click', () => {
     currentTourSectionIndex = 2;
+    currentSubModuleIndex = 0;
     startGlobalTour();
   });
   document.getElementById('btnListenTracker').addEventListener('click', () => {
     currentTourSectionIndex = 4;
+    currentSubModuleIndex = 0;
     startGlobalTour();
   });
 
@@ -529,7 +569,6 @@ function setupEventListeners() {
 
 function toggleGlobalSpeechTour() {
   if (speechSynth && speechSynth.paused) {
-    // 若處於暫停狀態，恢復接續往下朗讀
     speechSynth.resume();
     isPaused = false;
     isTourActive = true;
@@ -538,13 +577,12 @@ function toggleGlobalSpeechTour() {
   }
 
   if (isSpeaking && isTourActive && !isPaused) {
-    // 朗讀中點擊 ➔ 暫停
     speechSynth.pause();
     isPaused = true;
     updateAudioToggleButtonState(false);
   } else {
-    // 從當前可見區塊頂端開始
     currentTourSectionIndex = getCurrentVisibleSectionIndex();
+    currentSubModuleIndex = 0;
     isPaused = false;
     startGlobalTour();
   }
@@ -552,7 +590,7 @@ function toggleGlobalSpeechTour() {
 
 function resetAndStopTour() {
   stopGlobalTour();
-  // 將視角定位至當前區塊頂端
+  currentSubModuleIndex = 0;
   const currentSecId = tourSections[currentTourSectionIndex];
   const targetEl = document.getElementById(currentSecId);
   if (targetEl) {
@@ -570,6 +608,7 @@ function startGlobalTour() {
 function stopGlobalTour() {
   isTourActive = false;
   isPaused = false;
+  currentSubModuleIndex = 0;
   stopSpeech();
   updateAudioToggleButtonState(false);
 }
@@ -600,31 +639,71 @@ function speakSectionTour(sectionIdx) {
   }
 
   let textToRead = '';
-  const currentMod = modulesData[currentModule];
 
   switch (secId) {
     case 'summary':
       textToRead = currentLang === 'zh'
         ? `執行摘要。告別寫行行語法，邁向意圖與架構導航的 Vibe Coding 時代。將 AI Agent 視為從馬車到汽車的典範轉移，運用三大角色與四大工程要素。`
         : `Executive Summary. Shift to Intent and Architecture Navigation in Vibe Coding. View AI Agent as a shift from carriage to car.`;
+      
+      speakTextWithElement(textToRead, targetEl, () => {
+        if (isTourActive && !isPaused) {
+          currentTourSectionIndex = 1; // 過渡到核心學習模組
+          currentSubModuleIndex = 0;
+          speakSectionTour(currentTourSectionIndex);
+        }
+      });
       break;
 
     case 'modules':
+      // 核心學習模組一二三四連續導讀！
+      const subKey = moduleSubKeys[currentSubModuleIndex];
+      renderModule(subKey); // 切換模組 Tab 並完成 RWD 居中
+
+      const modObj = modulesData[subKey];
       textToRead = currentLang === 'zh'
-        ? `核心主題學習模組。當前為 ${currentMod.title.zh}。${currentMod.summary.zh}`
-        : `Core Learning Modules. Currently viewing ${currentMod.title.en}. ${currentMod.summary.en}`;
+        ? `${modObj.title.zh}。${modObj.summary.zh}`
+        : `${modObj.title.en}. ${modObj.summary.en}`;
+
+      speakTextWithElement(textToRead, document.getElementById('moduleDisplay'), () => {
+        if (isTourActive && !isPaused) {
+          if (currentSubModuleIndex + 1 < moduleSubKeys.length) {
+            currentSubModuleIndex++; // 連續朗讀下一模組 (一 ➔ 二 ➔ 三 ➔ 四)
+            speakSectionTour(1);
+          } else {
+            // 四個模組完全導讀完畢，過渡至下一個大分區 (互動實驗室)
+            currentTourSectionIndex = 2;
+            currentSubModuleIndex = 0;
+            speakSectionTour(currentTourSectionIndex);
+          }
+        }
+      });
       break;
 
     case 'lab':
       textToRead = currentLang === 'zh'
         ? `互動實驗室：無程式碼主題晨報模擬器。體驗修改設定檔文字即可改變 AI Agent 抓取與整理新聞的行為。`
         : `Interactive Lab: No-Code Theme Digest Simulator. Experience modifying config files to change AI Agent behaviors.`;
+      
+      speakTextWithElement(textToRead, targetEl, () => {
+        if (isTourActive && !isPaused) {
+          currentTourSectionIndex = 3;
+          speakSectionTour(currentTourSectionIndex);
+        }
+      });
       break;
 
     case 'resources':
       textToRead = currentLang === 'zh'
         ? `系統藍圖與外部資源。檢閱高解析度系統工程藍圖。`
         : `System Blueprint & Resources. Inspect the high resolution architecture blueprint.`;
+      
+      speakTextWithElement(textToRead, targetEl, () => {
+        if (isTourActive && !isPaused) {
+          currentTourSectionIndex = 4;
+          speakSectionTour(currentTourSectionIndex);
+        }
+      });
       break;
 
     case 'tracker':
@@ -632,20 +711,15 @@ function speakSectionTour(sectionIdx) {
       textToRead = currentLang === 'zh'
         ? `學習歷程記錄與成果。您已完成 ${trackerData.modulesCompleted.length} 個模組，測驗得分為 ${totalScore} 分。`
         : `Learning Progress Tracker. You have completed ${trackerData.modulesCompleted.length} modules, with a quiz score of ${totalScore} points.`;
+      
+      speakTextWithElement(textToRead, targetEl, () => {
+        if (isTourActive && !isPaused) {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          stopGlobalTour();
+        }
+      });
       break;
   }
-
-  speakTextWithElement(textToRead, targetEl, () => {
-    if (isTourActive && !isPaused) {
-      if (sectionIdx + 1 < tourSections.length) {
-        currentTourSectionIndex = sectionIdx + 1;
-        speakSectionTour(currentTourSectionIndex);
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        stopGlobalTour();
-      }
-    }
-  });
 }
 
 function runAgentSimulator() {

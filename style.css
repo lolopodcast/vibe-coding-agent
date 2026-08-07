@@ -116,11 +116,20 @@ p:hover, h1:hover, h2:hover, h3:hover, h4:hover, li:hover, td:hover {
   font-weight: 800;
   color: var(--color-text-main);
   letter-spacing: -0.2px;
+  white-space: nowrap;
 }
 
 .main-nav {
   display: flex;
   gap: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  max-width: 50%;
+}
+
+.main-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-link {
@@ -128,14 +137,16 @@ p:hover, h1:hover, h2:hover, h3:hover, h4:hover, li:hover, td:hover {
   color: var(--color-text-muted);
   font-weight: 600;
   font-size: 13.5px;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 6px;
+  white-space: nowrap;
   transition: all 0.2s ease;
 }
 
 .nav-link:hover, .nav-link.active {
   color: var(--color-primary-dark);
   background: var(--color-primary-light);
+  font-weight: 700;
 }
 
 .header-actions {
@@ -225,6 +236,7 @@ p:hover, h1:hover, h2:hover, h3:hover, h4:hover, li:hover, td:hover {
   font-size: 12.5px;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .lang-switch-btn:hover {
@@ -631,7 +643,7 @@ p:hover, h1:hover, h2:hover, h3:hover, h4:hover, li:hover, td:hover {
 .hidden { display: none !important; }
 
 @media (max-width: 850px) {
-  .main-nav { display: none; }
+  .main-nav { max-width: 100%; }
   .lab-grid { grid-template-columns: 1fr; }
   .hero-title { font-size: 20px; }
 }
