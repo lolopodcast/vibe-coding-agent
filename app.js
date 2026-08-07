@@ -2,7 +2,7 @@
  * Vibe Coding AI Agent 雙語學習平台核心引擎
  * - 智慧全域視聽同步語音導覽 (Smart Auto-Scroll Voice Tour)
  * - 全點字即讀 (Click-to-Speak Anything)
- * - 全介面 100% 雙語切換
+ * - 雙語對應 CSV 學習報告匯出 (檔名: VibeAI_組別-姓名-日期.csv)
  */
 
 let currentLang = 'zh';
@@ -99,7 +99,8 @@ const i18n = {
     trackModulesRead: '模組完成進度', trackQuizTotal: '測驗總得分', trackLabRuns: '實驗室模擬次數',
     thSection: '單元/分區 (Section)', thTime: '累積學習時間 (Time)', thClicks: '點擊互動次數 (Clicks)', thScore: '測驗得分 (Quiz Score)',
     lblTotal: '總計 (Total)', lblM1: '模組一 (M1)', lblM2: '模組二 (M2)', lblM3: '模組三 (M3)', lblM4: '模組四 (M4)', lblLab: '實驗室 (Lab)',
-    btnExportJSON: '匯出學習報告 (JSON)', btnPrintPDF: '列印 / 儲存 PDF', btnResetTrack: '重置歷程', btnBackTop: '回到頁首'
+    lblStudentMeta: '學生成果認證標籤：',
+    btnExportCSV: '匯出學習報告 (雙語 CSV)', btnPrintPDF: '列印 / 儲存 PDF', btnResetTrack: '重置歷程', btnBackTop: '回到頁首'
   },
   en: {
     siteTitle: 'Vibe Coding AI Agent Learning Platform',
@@ -125,7 +126,8 @@ const i18n = {
     trackModulesRead: 'Modules Progress', trackQuizTotal: 'Quiz Total Score', trackLabRuns: 'Lab Simulations',
     thSection: 'Section', thTime: 'Total Time', thClicks: 'Interaction Clicks', thScore: 'Quiz Score',
     lblTotal: 'Total', lblM1: 'Module 1 (M1)', lblM2: 'Module 2 (M2)', lblM3: 'Module 3 (M3)', lblM4: 'Module 4 (M4)', lblLab: 'Lab',
-    btnExportJSON: 'Export JSON Report', btnPrintPDF: 'Print PDF', btnResetTrack: 'Reset Tracker', btnBackTop: 'Top'
+    lblStudentMeta: 'Student Verification Meta:',
+    btnExportCSV: 'Export Report (Bilingual CSV)', btnPrintPDF: 'Print PDF', btnResetTrack: 'Reset Tracker', btnBackTop: 'Top'
   }
 };
 
@@ -283,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateTrackerUI();
   setupEventListeners();
   initClickToSpeak();
-  initUserScrollInterceptor(); // 監聽使用者手動滾動以跳接語音導覽
+  initUserScrollInterceptor();
 
   setInterval(() => {
     trackerData.totalTime += 1;
@@ -308,10 +310,9 @@ function initClickToSpeak() {
   });
 }
 
-// 手動滾動攔截器：若語音導覽啟用中，滑鼠手動滾動畫面自動跳接至當前分頁！
 function initUserScrollInterceptor() {
   window.addEventListener('scroll', () => {
-    if (isProgrammaticScrolling) return; // 自動平滑滾動中忽略
+    if (isProgrammaticScrolling) return;
 
     if (isTourActive) {
       clearTimeout(userScrollTimeout);
@@ -505,7 +506,7 @@ function setupEventListeners() {
     startGlobalTour();
   });
 
-  document.getElementById('btnExportProgress').addEventListener('click', exportProgressJSON);
+  document.getElementById('btnExportCSV').addEventListener('click', exportProgressCSV);
   document.getElementById('btnPrintReport').addEventListener('click', () => window.print());
   document.getElementById('btnResetTrack').addEventListener('click', resetTracker);
   document.getElementById('btnBackTop').addEventListener('click', () => {
@@ -513,8 +514,6 @@ function setupEventListeners() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
-
-/* ================= 智慧全域視聽同步導覽的核心 Logic ================= */
 
 function toggleGlobalSpeechTour() {
   if (isTourActive) {
@@ -599,13 +598,11 @@ function speakSectionTour(sectionIdx) {
   }
 
   speakTextWithElement(textToRead, targetEl, () => {
-    // 朗讀完畢後過渡到下一區塊
     if (isTourActive) {
       if (sectionIdx + 1 < tourSections.length) {
         currentTourSectionIndex = sectionIdx + 1;
         speakSectionTour(currentTourSectionIndex);
       } else {
-        // 到達頁尾：平滑滾動回頁頂並完成導覽
         window.scrollTo({ top: 0, behavior: 'smooth' });
         stopGlobalTour();
       }
@@ -773,18 +770,45 @@ function resetTracker() {
   }
 }
 
-function exportProgressJSON() {
-  const exportPayload = {
-    studentReport: 'Vibe Coding AI Agent Learning Report',
-    timestamp: new Date().toISOString(),
-    tracker: trackerData
-  };
+/* ================= 雙語 CSV 匯出邏輯 (檔名: VibeAI_組別-姓名-日期.csv) ================= */
 
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
-  const downloadAnchor = document.createElement('a');
-  downloadAnchor.setAttribute("href", dataStr);
-  downloadAnchor.setAttribute("download", `Vibe_Coding_Learning_Report_${Date.now()}.json`);
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  downloadAnchor.remove();
+function exportProgressCSV() {
+  const group = document.getElementById('studentGroupInput').value.trim() || 'G01';
+  const name = document.getElementById('studentNameInput').value.trim() || 'Student';
+
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const dateStr = `${yyyy}${mm}${dd}`;
+
+  // 檔名規格：VibeAI_組別-姓名-日期.csv
+  const fileName = `VibeAI_${group}-${name}-${dateStr}.csv`;
+
+  const totalScore = Object.values(trackerData.quizScores).reduce((a, b) => a + b, 0);
+
+  // CSV 表頭與資料列 (包含雙語對應欄位)
+  const rows = [
+    ['Section_單元分區', 'Time_停留時間(秒)', 'Clicks_點擊互動次數', 'QuizScore_測驗得分', 'CardsFlipped_記憶卡翻牌數', 'LabSims_實驗室模擬數'],
+    ['Total_總計統計', trackerData.totalTime, trackerData.totalClicks, totalScore, Object.values(trackerData.cardsRead).reduce((a,b)=>a+b,0), trackerData.labRuns],
+    ['Module 1_模組一典範轉移', trackerData.moduleTimes.m1 || 0, trackerData.moduleClicks.m1 || 0, trackerData.quizScores.m1 || 0, trackerData.cardsRead.m1 || 0, '-'],
+    ['Module 2_模組二四大要素', trackerData.moduleTimes.m2 || 0, trackerData.moduleClicks.m2 || 0, trackerData.quizScores.m2 || 0, trackerData.cardsRead.m2 || 0, '-'],
+    ['Module 3_模組三三重角色', trackerData.moduleTimes.m3 || 0, trackerData.moduleClicks.m3 || 0, trackerData.quizScores.m3 || 0, trackerData.cardsRead.m3 || 0, '-'],
+    ['Module 4_模組四晨報實戰', trackerData.moduleTimes.m4 || 0, trackerData.moduleClicks.m4 || 0, trackerData.quizScores.m4 || 0, trackerData.cardsRead.m4 || 0, '-'],
+    ['Interactive Lab_互動實驗室', trackerData.moduleTimes.lab || 0, trackerData.moduleClicks.lab || 0, '-', '-', trackerData.labRuns]
+  ];
+
+  let csvContent = "\uFEFF"; // UTF-8 BOM 防亂碼標頭
+  rows.forEach(row => {
+    csvContent += row.map(item => `"${String(item).replace(/"/g, '""')}"`).join(",") + "\n";
+  });
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", fileName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
