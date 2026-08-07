@@ -456,9 +456,8 @@ function renderModule(modId) {
 
   container.innerHTML = `
     <div class="module-card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <div style="margin-bottom: 8px;">
         <h3 style="font-size: 19px; font-weight: 800; color: var(--color-text-main);">${mod.title[currentLang]}</h3>
-        <button onclick="speakText('${mod.title[currentLang]}. ${mod.summary[currentLang]}')" class="btn btn-secondary btn-sm" style="font-size: 12px; padding: 4px 10px;"><i data-lucide="volume-2" size="14"></i> ${i18n[currentLang].btnListenModule}</button>
       </div>
       <div class="mod-keywords">${keywordsHTML}</div>
       <p style="font-size: 14px; font-weight: 600; color: var(--color-primary-dark); margin-bottom: 10px;">${mod.summary[currentLang]}</p>
@@ -587,25 +586,10 @@ function setupEventListeners() {
     });
   });
 
-  document.getElementById('btnRunAgentSim').addEventListener('click', runAgentSimulator);
-  document.getElementById('btnListenSummary').addEventListener('click', () => {
-    currentTourSectionIndex = 0;
-    currentSubModuleIndex = 0;
-    currentSentenceIndex = 0;
-    startGlobalTour();
-  });
-  document.getElementById('btnListenLab').addEventListener('click', () => {
-    currentTourSectionIndex = 2;
-    currentSubModuleIndex = 0;
-    currentSentenceIndex = 0;
-    startGlobalTour();
-  });
-  document.getElementById('btnListenTracker').addEventListener('click', () => {
-    currentTourSectionIndex = 4;
-    currentSubModuleIndex = 0;
-    currentSentenceIndex = 0;
-    startGlobalTour();
-  });
+  const btnRunSim = document.getElementById('btnRunSim');
+  if (btnRunSim) {
+    btnRunSim.addEventListener('click', runAgentSimulator);
+  }
 
   document.getElementById('btnExportCSV').addEventListener('click', exportProgressCSV);
   document.getElementById('btnPrintReport').addEventListener('click', () => window.print());
