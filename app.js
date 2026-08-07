@@ -559,11 +559,19 @@ function setupEventListeners() {
   });
 
   document.getElementById('speechSpeedSelect').addEventListener('change', (e) => {
-    if (isTourActive && !isPaused && isSpeaking) {
+    const selectedRate = parseFloat(e.target.value) || 1.0;
+    if (isTourActive && !isPaused) {
       if (currentUtterance && currentUtterance.text) {
         const textToReSpeak = currentUtterance.text;
         stopSpeech();
-        speakText(textToReSpeak, null, true);
+        isTourActive = true;
+        updateAudioToggleButtonState(true);
+        speakText(textToReSpeak, () => {
+          if (isTourActive && !isPaused) {
+            currentSentenceIndex++;
+            speakNextModuleItem(moduleSubKeys[currentSubModuleIndex]);
+          }
+        }, false);
       }
     }
   });
