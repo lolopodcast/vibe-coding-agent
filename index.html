@@ -34,12 +34,11 @@
       </nav>
 
       <div class="header-actions">
-        <!-- 輕量語音導覽區 -->
-        <div class="mini-audio-ctrl">
-          <button class="btn-mini-speech" id="btnPlaySpeech" title="播放語音"><i data-lucide="volume-2" size="16"></i></button>
-          <button class="btn-mini-speech" id="btnPauseSpeech" title="暫停"><i data-lucide="pause" size="16"></i></button>
-          <button class="btn-mini-speech" id="btnStopSpeech" title="停止"><i data-lucide="square" size="16"></i></button>
-          <span id="audioStatusText" style="font-size: 11.5px; font-weight: 600; color: var(--color-primary-dark); padding: 0 4px;" data-i18n="audioIdle">語音導覽就緒</span>
+        <!-- 極簡全域智慧語音導覽 Toggle -->
+        <div class="mini-audio-ctrl" title="點擊切換全域視聽導覽 (Global Auto-Scroll Speech)">
+          <button class="btn-global-speech" id="btnGlobalSpeechToggle">
+            <i data-lucide="play" id="audioToggleIcon" size="15"></i>
+          </button>
           <select id="speechSpeedSelect" class="speed-select-mini">
             <option value="0.8">0.8x</option>
             <option value="1.0" selected>1.0x</option>
@@ -57,7 +56,7 @@
   </header>
 
   <!-- 執行摘要 -->
-  <section id="summary" class="section hero-section">
+  <section id="summary" class="section hero-section" data-tour-section="summary">
     <div class="container">
       <div class="hero-card">
         <h2 class="hero-title" data-i18n="heroTitle">告別「寫行行語法」，邁向「意圖與架構導航」的 Vibe Coding 時代</h2>
@@ -71,7 +70,7 @@
   </section>
 
   <!-- 核心主題學習模組 -->
-  <section id="modules" class="section">
+  <section id="modules" class="section" data-tour-section="modules">
     <div class="container">
       <div class="section-header">
         <h2 class="section-title" data-i18n="modSectionTitle">核心主題學習模組</h2>
@@ -93,7 +92,7 @@
   </section>
 
   <!-- 互動實驗室 -->
-  <section id="lab" class="section">
+  <section id="lab" class="section" data-tour-section="lab">
     <div class="container">
       <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
         <div>
@@ -137,7 +136,7 @@
   </section>
 
   <!-- 藍圖與資源 -->
-  <section id="resources" class="section">
+  <section id="resources" class="section" data-tour-section="resources">
     <div class="container">
       <div class="section-header">
         <h2 class="section-title" data-i18n="resTitle">系統藍圖與外部資源</h2>
@@ -153,7 +152,7 @@
   </section>
 
   <!-- 學習歷程分析細節 -->
-  <section id="tracker" class="section">
+  <section id="tracker" class="section" data-tour-section="tracker">
     <div class="container">
       <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
         <div>

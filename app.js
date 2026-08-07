@@ -1,7 +1,7 @@
 /**
  * Vibe Coding AI Agent 雙語學習平台核心引擎
+ * - 智慧全域視聽同步語音導覽 (Smart Auto-Scroll Voice Tour)
  * - 全點字即讀 (Click-to-Speak Anything)
- * - 全系統無死角語音導覽
  * - 全介面 100% 雙語切換
  */
 
@@ -10,8 +10,15 @@ let currentModule = 'm1';
 let speechSynth = window.speechSynthesis;
 let currentUtterance = null;
 let isSpeaking = false;
+let isTourActive = false;
 let availableVoices = [];
 let activeSpeakingElement = null;
+
+let isProgrammaticScrolling = false;
+let userScrollTimeout = null;
+let currentTourSectionIndex = 0;
+
+const tourSections = ['summary', 'modules', 'lab', 'resources', 'tracker'];
 
 function initSpeechVoices() {
   if (!speechSynth) return;
@@ -70,7 +77,6 @@ let trackerData = JSON.parse(localStorage.getItem('vibe_agent_tracker_v3')) || {
 const i18n = {
   zh: {
     siteTitle: 'Vibe Coding AI Agent 雙語學習平台',
-    audioIdle: '語音導覽就緒', audioPlaying: '朗讀中...', audioPaused: '已暫停', speechSpeed: '語速',
     navSummary: '執行摘要', navModules: '核心模組', navLab: '互動實驗室', navResources: '系統藍圖', navTracker: '學習歷程',
     heroPill: 'AI Agent 現代導航哲學',
     heroTitle: '告別「寫行行語法」，邁向「意圖與架構導航」的 Vibe Coding 時代',
@@ -97,7 +103,6 @@ const i18n = {
   },
   en: {
     siteTitle: 'Vibe Coding AI Agent Learning Platform',
-    audioIdle: 'Speech Ready', audioPlaying: 'Reading...', audioPaused: 'Paused', speechSpeed: 'Speed',
     navSummary: 'Summary', navModules: 'Modules', navLab: 'Lab', navResources: 'Blueprint', navTracker: 'Tracker',
     heroPill: 'Modern Navigation Philosophy',
     heroTitle: 'Shift to Intent & Architecture Navigation (Vibe Coding)',
@@ -278,6 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateTrackerUI();
   setupEventListeners();
   initClickToSpeak();
+  initUserScrollInterceptor(); // 監聽使用者手動滾動以跳接語音導覽
 
   setInterval(() => {
     trackerData.totalTime += 1;
@@ -296,9 +302,42 @@ function initClickToSpeak() {
     
     const targetTextEl = e.target.closest('p, h1, h2, h3, h4, li, td, th, .quiz-feedback, .sim-steps, .t-val, .t-lbl, .kw-badge');
     if (targetTextEl && targetTextEl.innerText.trim().length > 0) {
+      stopGlobalTour();
       speakTextWithElement(targetTextEl.innerText.trim(), targetTextEl);
     }
   });
+}
+
+// 手動滾動攔截器：若語音導覽啟用中，滑鼠手動滾動畫面自動跳接至當前分頁！
+function initUserScrollInterceptor() {
+  window.addEventListener('scroll', () => {
+    if (isProgrammaticScrolling) return; // 自動平滑滾動中忽略
+
+    if (isTourActive) {
+      clearTimeout(userScrollTimeout);
+      userScrollTimeout = setTimeout(() => {
+        const visibleIdx = getCurrentVisibleSectionIndex();
+        if (visibleIdx !== -1 && visibleIdx !== currentTourSectionIndex) {
+          currentTourSectionIndex = visibleIdx;
+          speakSectionTour(currentTourSectionIndex);
+        }
+      }, 250);
+    }
+  });
+}
+
+function getCurrentVisibleSectionIndex() {
+  const windowCenter = window.innerHeight / 2;
+  for (let i = 0; i < tourSections.length; i++) {
+    const el = document.getElementById(tourSections[i]);
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      if (rect.top <= windowCenter && rect.bottom >= windowCenter) {
+        return i;
+      }
+    }
+  }
+  return 0;
 }
 
 function updateUIStrings() {
@@ -416,19 +455,22 @@ window.checkQuizAnswer = function(btnEl, modId, qIdx, chosenIdx, correctIdx) {
 };
 
 function setupEventListeners() {
-  // 品牌標誌點擊 -> 回到頁面頂端
   const brandLogo = document.getElementById('brandLogo');
   if (brandLogo) {
     brandLogo.addEventListener('click', () => {
+      stopGlobalTour();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
+
+  document.getElementById('btnGlobalSpeechToggle').addEventListener('click', toggleGlobalSpeechTour);
 
   document.getElementById('langToggleBtn').addEventListener('click', () => {
     currentLang = currentLang === 'zh' ? 'en' : 'zh';
     updateUIStrings();
     renderModule(currentModule);
     updateTrackerUI();
+    if (isTourActive) speakSectionTour(currentTourSectionIndex);
   });
 
   document.getElementById('moduleTabs').addEventListener('click', (e) => {
@@ -450,25 +492,125 @@ function setupEventListeners() {
   });
 
   document.getElementById('btnRunAgentSim').addEventListener('click', runAgentSimulator);
-  document.getElementById('btnPlaySpeech').addEventListener('click', playFullTour);
-  document.getElementById('btnPauseSpeech').addEventListener('click', pauseSpeech);
-  document.getElementById('btnStopSpeech').addEventListener('click', stopSpeech);
-  document.getElementById('btnListenSummary').addEventListener('click', playFullTour);
+  document.getElementById('btnListenSummary').addEventListener('click', () => {
+    currentTourSectionIndex = 0;
+    startGlobalTour();
+  });
   document.getElementById('btnListenLab').addEventListener('click', () => {
-    speakText(currentLang === 'zh' 
-      ? '歡迎使用無程式碼主題晨報模擬器。您可以修改設定檔主題，並觀察系統如何通過過濾與自檢。' 
-      : 'Welcome to the No-Code Theme Digest Simulator. Edit config files and observe the execution loop.');
+    currentTourSectionIndex = 2;
+    startGlobalTour();
   });
   document.getElementById('btnListenTracker').addEventListener('click', () => {
-    speakText(currentLang === 'zh' 
-      ? `您的學習進度為：已完成 ${trackerData.modulesCompleted.length} 個模組，測驗得分為 ${Object.values(trackerData.quizScores).reduce((a,b)=>a+b,0)} 分。` 
-      : `Your progress: Completed ${trackerData.modulesCompleted.length} modules, quiz score is ${Object.values(trackerData.quizScores).reduce((a,b)=>a+b,0)} points.`);
+    currentTourSectionIndex = 4;
+    startGlobalTour();
   });
 
   document.getElementById('btnExportProgress').addEventListener('click', exportProgressJSON);
   document.getElementById('btnPrintReport').addEventListener('click', () => window.print());
   document.getElementById('btnResetTrack').addEventListener('click', resetTracker);
-  document.getElementById('btnBackTop').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  document.getElementById('btnBackTop').addEventListener('click', () => {
+    stopGlobalTour();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+/* ================= 智慧全域視聽同步導覽的核心 Logic ================= */
+
+function toggleGlobalSpeechTour() {
+  if (isTourActive) {
+    stopGlobalTour();
+  } else {
+    currentTourSectionIndex = getCurrentVisibleSectionIndex();
+    startGlobalTour();
+  }
+}
+
+function startGlobalTour() {
+  isTourActive = true;
+  updateAudioToggleButtonState(true);
+  speakSectionTour(currentTourSectionIndex);
+}
+
+function stopGlobalTour() {
+  isTourActive = false;
+  stopSpeech();
+  updateAudioToggleButtonState(false);
+}
+
+function updateAudioToggleButtonState(playing) {
+  const btn = document.getElementById('btnGlobalSpeechToggle');
+  const icon = document.getElementById('audioToggleIcon');
+  if (playing) {
+    btn.classList.add('playing');
+    icon.setAttribute('data-lucide', 'pause');
+  } else {
+    btn.classList.remove('playing');
+    icon.setAttribute('data-lucide', 'play');
+  }
+  lucide.createIcons();
+}
+
+function speakSectionTour(sectionIdx) {
+  if (!isTourActive) return;
+
+  const secId = tourSections[sectionIdx];
+  const targetEl = document.getElementById(secId);
+
+  if (targetEl) {
+    isProgrammaticScrolling = true;
+    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => { isProgrammaticScrolling = false; }, 800);
+  }
+
+  let textToRead = '';
+  const currentMod = modulesData[currentModule];
+
+  switch (secId) {
+    case 'summary':
+      textToRead = currentLang === 'zh'
+        ? `執行摘要。告別寫行行語法，邁向意圖與架構導航的 Vibe Coding 時代。將 AI Agent 視為從馬車到汽車的典範轉移，運用三大角色與四大工程要素。`
+        : `Executive Summary. Shift to Intent and Architecture Navigation in Vibe Coding. View AI Agent as a shift from carriage to car.`;
+      break;
+
+    case 'modules':
+      textToRead = currentLang === 'zh'
+        ? `核心主題學習模組。當前為 ${currentMod.title.zh}。${currentMod.summary.zh}`
+        : `Core Learning Modules. Currently viewing ${currentMod.title.en}. ${currentMod.summary.en}`;
+      break;
+
+    case 'lab':
+      textToRead = currentLang === 'zh'
+        ? `互動實驗室：無程式碼主題晨報模擬器。體驗修改設定檔文字即可改變 AI Agent 抓取與整理新聞的行為。`
+        : `Interactive Lab: No-Code Theme Digest Simulator. Experience modifying config files to change AI Agent behaviors.`;
+      break;
+
+    case 'resources':
+      textToRead = currentLang === 'zh'
+        ? `系統藍圖與外部資源。檢閱高解析度系統工程藍圖。`
+        : `System Blueprint & Resources. Inspect the high resolution architecture blueprint.`;
+      break;
+
+    case 'tracker':
+      const totalScore = Object.values(trackerData.quizScores).reduce((a, b) => a + b, 0);
+      textToRead = currentLang === 'zh'
+        ? `學習歷程記錄與成果。您已完成 ${trackerData.modulesCompleted.length} 個模組，測驗得分為 ${totalScore} 分。`
+        : `Learning Progress Tracker. You have completed ${trackerData.modulesCompleted.length} modules, with a quiz score of ${totalScore} points.`;
+      break;
+  }
+
+  speakTextWithElement(textToRead, targetEl, () => {
+    // 朗讀完畢後過渡到下一區塊
+    if (isTourActive) {
+      if (sectionIdx + 1 < tourSections.length) {
+        currentTourSectionIndex = sectionIdx + 1;
+        speakSectionTour(currentTourSectionIndex);
+      } else {
+        // 到達頁尾：平滑滾動回頁頂並完成導覽
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        stopGlobalTour();
+      }
+    }
+  });
 }
 
 function runAgentSimulator() {
@@ -525,7 +667,7 @@ function runAgentSimulator() {
   }, 400);
 }
 
-function speakTextWithElement(text, domElement) {
+function speakTextWithElement(text, domElement, callbackOnEnd) {
   if (activeSpeakingElement) {
     activeSpeakingElement.classList.remove('speaking-highlight');
   }
@@ -539,6 +681,7 @@ function speakTextWithElement(text, domElement) {
       activeSpeakingElement.classList.remove('speaking-highlight');
       activeSpeakingElement = null;
     }
+    if (typeof callbackOnEnd === 'function') callbackOnEnd();
   });
 }
 
@@ -568,12 +711,10 @@ function speakText(text, callbackOnEnd) {
 
   currentUtterance.onstart = () => {
     isSpeaking = true;
-    document.getElementById('audioStatusText').textContent = i18n[currentLang].audioPlaying;
   };
 
   currentUtterance.onend = () => {
     isSpeaking = false;
-    document.getElementById('audioStatusText').textContent = i18n[currentLang].audioIdle;
     if (activeSpeakingElement) {
       activeSpeakingElement.classList.remove('speaking-highlight');
       activeSpeakingElement = null;
@@ -584,26 +725,10 @@ function speakText(text, callbackOnEnd) {
   speechSynth.speak(currentUtterance);
 }
 
-function playFullTour() {
-  const fullTourText = currentLang === 'zh' 
-    ? `歡迎來到 Vibe Coding AI Agent 雙語學習平台。本課程由羅時敏教授設計。告別死記語法，邁向意圖與架構導航。第一單元：典範轉移比喻，AI Agent 是你的汽車，你負責掌舵。第二單元：四大工程要素，掌握 Prompt、Context、Harness 與 Loop。第三單元：三大協作角色，善用管家、教練與工程師團隊。第四單元：晨報 Agent 實戰，達成無程式碼修改維護。`
-    : `Welcome to the Vibe Coding AI Agent Learning Platform by Professor Shihmin Lo. Shift from syntax coding to intent and architecture steering. Module 1: Metaphor shift from carriage to car. Module 2: Four pillars including Prompt, Context, Harness, and Loop. Module 3: Three roles including Butler, Coach, and Engineer Subagents. Module 4: Morning Digest Agent for no-code maintenance.`;
-  
-  speakText(fullTourText);
-}
-
-function pauseSpeech() {
-  if (speechSynth && isSpeaking) {
-    speechSynth.pause();
-    document.getElementById('audioStatusText').textContent = i18n[currentLang].audioPaused;
-  }
-}
-
 function stopSpeech() {
   if (speechSynth) {
     speechSynth.cancel();
     isSpeaking = false;
-    document.getElementById('audioStatusText').textContent = i18n[currentLang].audioIdle;
     if (activeSpeakingElement) {
       activeSpeakingElement.classList.remove('speaking-highlight');
       activeSpeakingElement = null;
