@@ -149,7 +149,7 @@ const modulesData = {
       en: 'AI Agent is your car, traditional code is a carriage. You steer destination instead of fixing horseshoes.'
     },
     description: {
-      zh: '<p>在馬車時代，規則圍繞著馬匹的體力與習性。汽車誕生後，舊有規則被顛覆，誕生了高速公路與防範護欄。Vibe Coding 讓學生不再死記程式語法，而是擔任駕駛員與 PM，透過高層次意圖驅動系統。</p>',
+      zh: '<p>在馬車時代，規則圍繞著馬匹的體力與習性。汽車誕生後，舊有規則被顛覆，誕生了高速公路與防範護欄。Vibe Coding 讓學生不再死記程式語法，而是擔任駕駛與 PM，透過高層次意圖驅動系統。</p>',
       en: '<p>In the carriage era, rules revolved around horses. When cars arrived, roads and safety rules transformed. Vibe Coding shifts your focus to architecture and intent.</p>'
     },
     cards: [
@@ -170,7 +170,7 @@ const modulesData = {
       {
         q: { zh: 'Vibe Coding 帶給商管學生的核心轉變是？', en: 'What is the key transformation Vibe Coding brings to business students?' },
         options: {
-          zh: ['A. 變得更會手寫行行 C++ 語法', 'B. 轉變為產品經理與駕駛員，透過高層次 Intent 驅動 AI', 'C. 完全不需要了解商業邏輯', 'D. 只需使用傳統試算表'],
+          zh: ['A. 變得更會手寫行行 C++ 語法', 'B. 轉變為產品經理與駕駛，透過高層次 Intent 驅動 AI', 'C. 完全不需要了解商業邏輯', 'D. 只需使用傳統試算表'],
           en: ['A. Writing C++ syntax manually', 'B. Becoming PM/Driver driving AI via high-level Intent', 'C. Ignoring business logic', 'D. Using spreadsheets only']
         },
         ans: 1, exp: { zh: '商管學生應著重在產品規格、意圖與架構領導。', en: 'Focus on PM spec, intent, and architecture leadership.' }

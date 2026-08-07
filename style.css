@@ -71,9 +71,11 @@ p:hover, h1:hover, h2:hover, h3:hover, h4:hover, li:hover, td:hover {
 }
 
 .speaking-highlight {
-  background-color: #fef08a !important;
-  outline: 2px solid #eab308;
+  background-color: rgba(224, 242, 254, 0.85) !important;
+  outline: 2px solid var(--color-primary);
+  box-shadow: 0 0 10px rgba(2, 132, 199, 0.25);
   border-radius: 4px;
+  transition: background-color 0.3s ease, outline 0.3s ease;
 }
 
 /* ================= Header 固定頂列 ================= */
