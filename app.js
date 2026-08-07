@@ -170,7 +170,7 @@ const modulesData = {
       {
         q: { zh: 'Vibe Coding 帶給商管學生的核心轉變是？', en: 'What is the key transformation Vibe Coding brings to business students?' },
         options: {
-          zh: ['A. 變得更會手寫行行 C++ 語法', 'B. 轉變為產品經理與駕駛，透過高層次 Intent 驅動 AI', 'C. 完全不需要了解商業邏輯', 'D. 只需使用傳統試算表'],
+          zh: ['A. 變得更會手寫逐行 C++ 語法', 'B. 轉變為產品經理與駕駛，透過高層次 Intent 驅動 AI', 'C. 完全不需要了解商業邏輯', 'D. 只需使用傳統試算表'],
           en: ['A. Writing C++ syntax manually', 'B. Becoming PM/Driver driving AI via high-level Intent', 'C. Ignoring business logic', 'D. Using spreadsheets only']
         },
         ans: 1, exp: { zh: '商管學生應著重在產品規格、意圖與架構領導。', en: 'Focus on PM spec, intent, and architecture leadership.' }
@@ -217,7 +217,7 @@ const modulesData = {
     title: { zh: '模組三：AI 協作三重角色模型 (3 Collaborative Roles)', en: 'Module 3: 3 Collaborative AI Roles' },
     keywords: ['Butler(管家)', 'Coach(教練)', 'Engineer Subagents'],
     summary: {
-      zh: '管家負責基建與 KB 檔案、教練解說觀念與給予心理鼓勵、工程師 Subagents 分工實作。',
+      zh: '管家負責基礎架構與 KB 檔案、教練解說觀念與給予心理鼓勵、工程師 Subagents 分工實作。',
       en: 'Butler handles workspace & KB docs, Coach explains concepts, Engineer Subagents implement & test.'
     },
     description: {
@@ -233,10 +233,10 @@ const modulesData = {
       {
         q: { zh: '幫你維護 `.gitignore` 並將共識寫成 `KB/theme_config.md` 的是哪位角色？', en: 'Which role helps maintain `.gitignore` and writes consensus into `KB/theme_config.md`?' },
         options: {
-          zh: ['A. 管家 Butler', 'B. 教練 Coach', 'C. DevOps Subagent', 'D. 汽車駕駛'],
+          zh: ['A. 管家 Butler', 'B. Coach 教練', 'C. DevOps Subagent', 'D. 汽車駕駛'],
           en: ['A. Butler', 'B. Coach', 'C. DevOps Subagent', 'D. Car Driver']
         },
-        ans: 0, exp: { zh: '管家負責基建與檔案結構維護。', en: 'Butler handles workspace infrastructure & KB files.' }
+        ans: 0, exp: { zh: '管家負責基礎架構與檔案結構維護。', en: 'Butler handles workspace infrastructure & KB files.' }
       },
       {
         q: { zh: '當你在學習中感到困惑時，為你解說資安與 Prompt Injection 觀念並給予鼓勵的是？', en: 'Who explains security concepts with encouragement when you feel confused?' },
