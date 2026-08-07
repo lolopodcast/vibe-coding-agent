@@ -1058,3 +1058,63 @@ function exportProgressCSV() {
   link.click();
   document.body.removeChild(link);
 }
+
+/* ==================== VibeGuide Kinetic Teaching Controller API ==================== */
+function ensureSpotlightOverlay() {
+  let s = document.getElementById('vibeGuideSpotlight');
+  if (!s) {
+    s = document.createElement('div');
+    s.id = 'vibeGuideSpotlight';
+    document.body.appendChild(s);
+  }
+  return s;
+}
+
+window.VibeGuide = {
+  focusElement: function(selector, duration = 3000) {
+    const el = typeof selector === 'string' ? document.querySelector(selector) : selector;
+    if (!el) return;
+    const spotlight = ensureSpotlightOverlay();
+    
+    document.querySelectorAll('.guide-pulse-focus').forEach(e => e.classList.remove('guide-pulse-focus'));
+    spotlight.classList.add('active');
+    
+    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    el.classList.add('guide-pulse-focus');
+    
+    if (duration > 0) {
+      setTimeout(() => {
+        el.classList.remove('guide-pulse-focus');
+        if (!document.querySelector('.guide-pulse-focus')) {
+          spotlight.classList.remove('active');
+        }
+      }, duration);
+    }
+  },
+  flipCard: function(cardSelector) {
+    const card = typeof cardSelector === 'string' ? document.querySelector(cardSelector) : cardSelector;
+    if (card) {
+      this.focusElement(card, 3000);
+      card.click();
+    }
+  },
+  clickTab: function(modId) {
+    const tab = document.querySelector(`.mod-tab[data-mod="${modId}"]`);
+    if (tab) {
+      this.focusElement(tab, 2000);
+      tab.click();
+    }
+  },
+  clickButton: function(btnSelector) {
+    const btn = typeof btnSelector === 'string' ? document.querySelector(btnSelector) : btnSelector;
+    if (btn) {
+      this.focusElement(btn, 2500);
+      btn.click();
+    }
+  },
+  clearFocus: function() {
+    document.querySelectorAll('.guide-pulse-focus').forEach(e => e.classList.remove('guide-pulse-focus'));
+    const spotlight = document.getElementById('vibeGuideSpotlight');
+    if (spotlight) spotlight.classList.remove('active');
+  }
+};
