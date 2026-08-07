@@ -366,20 +366,28 @@ function syncHeaderNavWithScroll() {
 
 function getCurrentVisibleSectionIndex() {
   if (window.scrollY < 120) {
-    return 0;
+    return 0; // summary
   }
 
-  const windowCenter = window.innerHeight / 2;
+  const vTop = 80;
+  let bestIdx = 0;
+  let maxVisibleHeight = 0;
+
   for (let i = 0; i < tourSections.length; i++) {
     const el = document.getElementById(tourSections[i]);
     if (el) {
       const rect = el.getBoundingClientRect();
-      if (rect.top <= windowCenter && rect.bottom >= windowCenter) {
-        return i;
+      const visibleTop = Math.max(rect.top, vTop);
+      const visibleBottom = Math.min(rect.bottom, window.innerHeight);
+      const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+
+      if (visibleHeight > maxVisibleHeight) {
+        maxVisibleHeight = visibleHeight;
+        bestIdx = i;
       }
     }
   }
-  return 0;
+  return bestIdx;
 }
 
 function updateUIStrings() {
@@ -456,12 +464,22 @@ function renderModule(modId) {
       <h4 style="font-size: 14.5px; font-weight: 800; margin-top: 20px; color: var(--color-text-main);">${i18n[currentLang].cardsHeader} (${mod.cards.length})</h4>
       <div class="flip-cards-grid">${cardsHTML}</div>
 
-      <div class="quiz-box">
+      <div class="quiz-box" id="quiz_box_${modId}">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h4 style="font-size: 14.5px; font-weight: 800; color: var(--color-text-main);">${i18n[currentLang].quizHeader} (${mod.quizzes.length})</h4>
           <button onclick="renderModule('${modId}')" class="btn btn-secondary btn-sm" style="font-size: 11.5px; padding: 3px 8px;">${i18n[currentLang].btnRetry}</button>
         </div>
-        ${quizzesHTML}
+        ${mod.quizzes.map((qObj, qIdx) => `
+          <div class="quiz-item" id="quiz_q_${modId}_${qIdx}" style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-light);">
+            <p style="font-size: 13.5px; font-weight: 600; color: var(--color-text-main);">${qIdx + 1}. ${qObj.q[currentLang]}</p>
+            <div class="quiz-options">
+              ${qObj.options[currentLang].map((opt, optIdx) => `
+                <button class="quiz-opt-btn" onclick="checkQuizAnswer(this, '${modId}', ${qIdx}, ${optIdx}, ${qObj.ans})">${opt}</button>
+              `).join('')}
+            </div>
+            <div class="quiz-feedback" style="margin-top: 6px; font-size: 12.5px; font-weight: 700;"></div>
+          </div>
+        `).join('')}
       </div>
     </div>
   `;
@@ -536,6 +554,16 @@ function setupEventListeners() {
         currentSubModuleIndex = moduleSubKeys.indexOf(selectedModKey);
         currentSentenceIndex = 0;
         speakSectionTour(currentTourSectionIndex);
+      }
+    }
+  });
+
+  document.getElementById('speechSpeedSelect').addEventListener('change', (e) => {
+    if (isTourActive && !isPaused && isSpeaking) {
+      if (currentUtterance && currentUtterance.text) {
+        const textToReSpeak = currentUtterance.text;
+        stopSpeech();
+        speakText(textToReSpeak, null, true);
       }
     }
   });
@@ -618,14 +646,16 @@ function buildModuleSentenceQueue(modKey) {
     });
   });
 
-  // 4. 每題測驗題的題目
+  // 4. 每題測驗題的題目 (附帶 DOM ID 定位，自動平滑滾動置中)
   queue.push({
-    text: lang === 'zh' ? '隨堂觀念測驗：' : 'Knowledge Assessment:'
+    text: lang === 'zh' ? '隨堂觀念測驗：' : 'Knowledge Assessment:',
+    targetDomId: `quiz_box_${modKey}`
   });
 
   mod.quizzes.forEach((qObj, qIdx) => {
     queue.push({
-      text: `${lang === 'zh' ? `測驗第${qIdx + 1}題：` : `Quiz Question ${qIdx + 1}:`} ${qObj.q[lang]}`
+      text: `${lang === 'zh' ? `測驗第${qIdx + 1}題：` : `Quiz Question ${qIdx + 1}:`} ${qObj.q[lang]}`,
+      targetDomId: `quiz_q_${modKey}_${qIdx}`
     });
   });
 
@@ -797,22 +827,27 @@ function speakNextModuleItem(subKey) {
   }
 
   const item = moduleSentenceQueue[currentSentenceIndex];
-  let cardDom = null;
+  let targetDom = null;
 
-  if (item.cardIdx !== undefined) {
-    cardDom = document.getElementById(`card_${subKey}_${item.cardIdx}`);
-    if (cardDom) {
-      cardDom.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  if (item.targetDomId) {
+    targetDom = document.getElementById(item.targetDomId);
+    if (targetDom) {
+      targetDom.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    }
+  } else if (item.cardIdx !== undefined) {
+    targetDom = document.getElementById(`card_${subKey}_${item.cardIdx}`);
+    if (targetDom) {
+      targetDom.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
       if (item.flipState === false) {
-        cardDom.classList.remove('flipped');
+        targetDom.classList.remove('flipped');
       }
     }
   }
 
-  speakTextWithElement(item.text, cardDom || document.getElementById('moduleDisplay'), () => {
+  speakTextWithElement(item.text, targetDom || document.getElementById('moduleDisplay'), () => {
     if (isTourActive && !isPaused) {
-      if (item.cardIdx !== undefined && item.flipState === false && cardDom) {
-        cardDom.classList.add('flipped');
+      if (item.cardIdx !== undefined && item.flipState === false && targetDom) {
+        targetDom.classList.add('flipped');
       }
       currentSentenceIndex++;
       setTimeout(() => {
