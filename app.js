@@ -734,46 +734,7 @@ function speakSectionTour(sectionIdx) {
         moduleSentenceQueue = buildModuleSentenceQueue(subKey);
       }
 
-      if (currentSentenceIndex < moduleSentenceQueue.length) {
-        const item = moduleSentenceQueue[currentSentenceIndex];
-        let cardDom = null;
-
-        if (item.cardIdx !== undefined) {
-          cardDom = document.getElementById(`card_${subKey}_${item.cardIdx}`);
-          if (cardDom) {
-            // 在唸正面時，卡片絕對保持正面朝上
-            if (item.flipState === false) {
-              cardDom.classList.remove('flipped');
-            }
-            cardDom.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-          }
-        }
-
-        speakTextWithElement(item.text, cardDom || document.getElementById('moduleDisplay'), () => {
-          if (isTourActive && !isPaused) {
-            // 當且僅當【唸完正面】之後，才觸發 3D 翻面動畫！
-            if (item.cardIdx !== undefined && item.flipState === false && cardDom) {
-              cardDom.classList.add('flipped');
-            }
-
-            currentSentenceIndex++;
-            if (currentSentenceIndex < moduleSentenceQueue.length) {
-              speakSectionTour(1);
-            } else {
-              currentSentenceIndex = 0;
-              if (currentSubModuleIndex + 1 < moduleSubKeys.length) {
-                currentSubModuleIndex++;
-                speakSectionTour(1);
-              } else {
-                currentTourSectionIndex = 2;
-                currentSubModuleIndex = 0;
-                currentSentenceIndex = 0;
-                speakSectionTour(currentTourSectionIndex);
-              }
-            }
-          }
-        });
-      }
+      speakNextModuleItem(subKey);
       break;
 
     case 'lab':
@@ -816,6 +777,49 @@ function speakSectionTour(sectionIdx) {
       });
       break;
   }
+}
+
+function speakNextModuleItem(subKey) {
+  if (!isTourActive || isPaused) return;
+
+  if (currentSentenceIndex >= moduleSentenceQueue.length) {
+    currentSentenceIndex = 0;
+    if (currentSubModuleIndex + 1 < moduleSubKeys.length) {
+      currentSubModuleIndex++;
+      speakSectionTour(1);
+    } else {
+      currentTourSectionIndex = 2;
+      currentSubModuleIndex = 0;
+      currentSentenceIndex = 0;
+      speakSectionTour(currentTourSectionIndex);
+    }
+    return;
+  }
+
+  const item = moduleSentenceQueue[currentSentenceIndex];
+  let cardDom = null;
+
+  if (item.cardIdx !== undefined) {
+    cardDom = document.getElementById(`card_${subKey}_${item.cardIdx}`);
+    if (cardDom) {
+      cardDom.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      if (item.flipState === false) {
+        cardDom.classList.remove('flipped');
+      }
+    }
+  }
+
+  speakTextWithElement(item.text, cardDom || document.getElementById('moduleDisplay'), () => {
+    if (isTourActive && !isPaused) {
+      if (item.cardIdx !== undefined && item.flipState === false && cardDom) {
+        cardDom.classList.add('flipped');
+      }
+      currentSentenceIndex++;
+      setTimeout(() => {
+        speakNextModuleItem(subKey);
+      }, 180);
+    }
+  }, true);
 }
 
 function runAgentSimulator() {
@@ -872,7 +876,7 @@ function runAgentSimulator() {
   }, 400);
 }
 
-function speakTextWithElement(text, domElement, callbackOnEnd) {
+function speakTextWithElement(text, domElement, callbackOnEnd, isSequential = false) {
   if (activeSpeakingElement) {
     activeSpeakingElement.classList.remove('speaking-highlight');
   }
@@ -887,12 +891,14 @@ function speakTextWithElement(text, domElement, callbackOnEnd) {
       activeSpeakingElement = null;
     }
     if (typeof callbackOnEnd === 'function') callbackOnEnd();
-  });
+  }, isSequential);
 }
 
-function speakText(text, callbackOnEnd) {
+function speakText(text, callbackOnEnd, isSequential = false) {
   if (!speechSynth) return;
-  stopSpeech();
+  if (!isSequential) {
+    stopSpeech();
+  }
   speechSynth.resume();
 
   currentUtterance = new SpeechSynthesisUtterance(text);
