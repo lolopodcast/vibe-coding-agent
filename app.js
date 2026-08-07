@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderModule(currentModule);
   updateTrackerUI();
   setupEventListeners();
-  initClickToSpeak(); // 啟用全點字即讀
+  initClickToSpeak();
 
   setInterval(() => {
     trackerData.totalTime += 1;
@@ -289,11 +289,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 1000);
 });
 
-// 全點字即讀 (Click-to-Speak Anything on Page)
+// 全點字即讀
 function initClickToSpeak() {
   document.body.addEventListener('click', (e) => {
-    // 避開按鈕、表單與輸入框的原本點擊
-    if (e.target.closest('button, input, textarea, select, a, .flip-card')) return;
+    if (e.target.closest('button, input, textarea, select, a, .flip-card, .brand')) return;
     
     const targetTextEl = e.target.closest('p, h1, h2, h3, h4, li, td, th, .quiz-feedback, .sim-steps, .t-val, .t-lbl, .kw-badge');
     if (targetTextEl && targetTextEl.innerText.trim().length > 0) {
@@ -417,6 +416,14 @@ window.checkQuizAnswer = function(btnEl, modId, qIdx, chosenIdx, correctIdx) {
 };
 
 function setupEventListeners() {
+  // 品牌標誌點擊 -> 回到頁面頂端
+  const brandLogo = document.getElementById('brandLogo');
+  if (brandLogo) {
+    brandLogo.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
   document.getElementById('langToggleBtn').addEventListener('click', () => {
     currentLang = currentLang === 'zh' ? 'en' : 'zh';
     updateUIStrings();

@@ -100,6 +100,17 @@ p:hover, h1:hover, h2:hover, h3:hover, h4:hover, li:hover, td:hover {
   justify-content: space-between;
 }
 
+.brand {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.brand:hover {
+  background: var(--color-primary-light);
+}
+
 .brand-text h1 {
   font-size: 17px;
   font-weight: 800;
