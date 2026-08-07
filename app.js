@@ -347,14 +347,11 @@ function initUserScrollInterceptor() {
   });
 }
 
-function syncHeaderNavWithScroll() {
-  const visibleIdx = getCurrentVisibleSectionIndex();
-  const currentSecId = tourSections[visibleIdx];
-
+function syncHeaderNavWithSectionId(secId) {
   const navLinks = document.querySelectorAll('.main-nav .nav-link');
   navLinks.forEach(link => {
     const targetHref = link.getAttribute('href').replace('#', '');
-    if (targetHref === currentSecId) {
+    if (targetHref === secId) {
       if (!link.classList.contains('active')) {
         navLinks.forEach(l => l.classList.remove('active'));
         link.classList.add('active');
@@ -362,6 +359,12 @@ function syncHeaderNavWithScroll() {
       }
     }
   });
+}
+
+function syncHeaderNavWithScroll() {
+  const visibleIdx = getCurrentVisibleSectionIndex();
+  const currentSecId = tourSections[visibleIdx];
+  syncHeaderNavWithSectionId(currentSecId);
 }
 
 function getCurrentVisibleSectionIndex() {
@@ -739,6 +742,9 @@ function speakSectionTour(sectionIdx) {
 
   const secId = tourSections[sectionIdx];
   const targetEl = document.getElementById(secId);
+
+  // 顯式驅動頁首選單連動反白與 RWD 置中
+  syncHeaderNavWithSectionId(secId);
 
   if (targetEl && currentSentenceIndex === 0) {
     isProgrammaticScrolling = true;
