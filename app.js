@@ -736,22 +736,26 @@ function speakSectionTour(sectionIdx) {
 
       if (currentSentenceIndex < moduleSentenceQueue.length) {
         const item = moduleSentenceQueue[currentSentenceIndex];
+        let cardDom = null;
 
-        // 觸發精準翻牌動效與置中定位
         if (item.cardIdx !== undefined) {
-          const cardDom = document.getElementById(`card_${subKey}_${item.cardIdx}`);
+          cardDom = document.getElementById(`card_${subKey}_${item.cardIdx}`);
           if (cardDom) {
-            if (item.flipState === true) {
-              cardDom.classList.add('flipped');
-            } else {
+            // 在唸正面時，卡片絕對保持正面朝上
+            if (item.flipState === false) {
               cardDom.classList.remove('flipped');
             }
             cardDom.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
           }
         }
 
-        speakTextWithElement(item.text, document.getElementById('moduleDisplay'), () => {
+        speakTextWithElement(item.text, cardDom || document.getElementById('moduleDisplay'), () => {
           if (isTourActive && !isPaused) {
+            // 當且僅當【唸完正面】之後，才觸發 3D 翻面動畫！
+            if (item.cardIdx !== undefined && item.flipState === false && cardDom) {
+              cardDom.classList.add('flipped');
+            }
+
             currentSentenceIndex++;
             if (currentSentenceIndex < moduleSentenceQueue.length) {
               speakSectionTour(1);
