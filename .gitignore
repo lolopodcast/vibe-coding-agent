@@ -1,10 +1,5 @@
-# 敏感環境變數檔 (包含 API 密碼)
-.env
-.env.local
-
-# 系統與編譯臨時檔
-__pycache__/
-*.log
+output_video/
+audio_tracks/
 node_modules/
-dist/
-.DS_Store
+__pycache__/
+*.webm

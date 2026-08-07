@@ -1,5 +1,0 @@
-file 'C:\Users\jimmy\Projects\vibe-coding-agent\audio_tracks\06_intro_zh.mp3'
-file 'C:\Users\jimmy\Projects\vibe-coding-agent\audio_tracks\07_pillars_zh.mp3'
-file 'C:\Users\jimmy\Projects\vibe-coding-agent\audio_tracks\08_roles_zh.mp3'
-file 'C:\Users\jimmy\Projects\vibe-coding-agent\audio_tracks\09_lab_zh.mp3'
-file 'C:\Users\jimmy\Projects\vibe-coding-agent\audio_tracks\10_tracker_zh.mp3'
