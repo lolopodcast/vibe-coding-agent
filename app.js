@@ -1,9 +1,9 @@
 /**
  * Vibe Coding AI Agent 雙語學習平台核心引擎
  * - 深度視聽同步語音導覽 (Deep Learning Voice Tour: Title + Summary + Description + Cards Front/Back + Quiz Questions)
+ * - 精準卡片翻轉視聽時序 (先呈正面語音 ➔ 續念「反面」瞬間 3D 翻牌同步)
  * - 全頁首導覽滾動連動反白與 RWD 水平居中
- * - 模組一二三四深度連續導讀與視聽 Tab/卡片自動翻轉居中
- * - 頁頂判定修復 (從執行摘要開啟全導覽)
+ * - 模組一二三四深度連續導讀與視聽 Tab/卡片自動置中
  * - 全點字即讀與雙語對應 CSV 匯出
  */
 
@@ -277,7 +277,7 @@ const modulesData = {
       {
         q: { zh: '晨報 Agent 為了避免違反著作權條款，採取了什麼保護做法？', en: 'To avoid copyright issues, what protection does Morning Digest Agent use?' },
         options: {
-          zh: ['A. 複製整篇新聞全文', 'B. 禁止抓取任何新聞', 'C. 只輸出衍生摘要並強制標註原文出處網址', 'D. 隱藏新聞標題'],
+          zh: ['A. 複製整篇新聞全文', 'B. 禁止抓取任何新聞', 'C. 只輸出衍生摘要與強制標註原文出處網址', 'D. 隱藏新聞標題'],
           en: ['A. Copy full news text', 'B. Ban fetching news', 'C. Output derived summaries with mandatory source links', 'D. Hide news title']
         },
         ans: 2, exp: { zh: '衍生摘要 + 出處網址是著作權合規的最佳做人道理。', en: 'Derived summaries with citation links respect copyright.' }
@@ -577,7 +577,7 @@ function setupEventListeners() {
   });
 }
 
-/* ================= 建立模組深度導覽的句子與動作陣列 ================= */
+/* ================= 建立模組深度導覽的句子與精準翻牌動作陣列 ================= */
 
 function buildModuleSentenceQueue(modKey) {
   const mod = modulesData[modKey];
@@ -595,16 +595,26 @@ function buildModuleSentenceQueue(modKey) {
     text: plainDesc
   });
 
-  // 3. 每張翻轉學習卡的正反面 (附帶 DOM 翻牌視覺動作)
+  // 3. 每張翻轉學習卡的正反面 (精準時序：正面念完 ➔ 續念「反面」瞬間 3D 翻牌同步)
   queue.push({
     text: lang === 'zh' ? '觀念翻轉記憶卡：' : 'Concept Flashcards:'
   });
 
   mod.cards.forEach((card, cardIdx) => {
+    // 步驟 A: 正面（此時卡片保持正面朝上 flipState: false）
     queue.push({
-      text: `${lang === 'zh' ? `卡片${cardIdx + 1}，正面：` : `Card ${cardIdx + 1}, Front:`} ${card.front[lang]}。${lang === 'zh' ? '反面：' : 'Back:'} ${card.back[lang]}`,
+      text: `${lang === 'zh' ? `卡片${cardIdx + 1}，正面：` : `Card ${cardIdx + 1}, Front:`} ${card.front[lang]}`,
       modKey: modKey,
-      cardIdx: cardIdx
+      cardIdx: cardIdx,
+      flipState: false
+    });
+
+    // 步驟 B: 反面（續念「反面」時，精準與 3D 翻牌動畫同步 flipState: true！）
+    queue.push({
+      text: `${lang === 'zh' ? '反面：' : 'Back:'} ${card.back[lang]}`,
+      modKey: modKey,
+      cardIdx: cardIdx,
+      flipState: true
     });
   });
 
@@ -720,7 +730,6 @@ function speakSectionTour(sectionIdx) {
       const subKey = moduleSubKeys[currentSubModuleIndex];
       renderModule(subKey);
 
-      // 當位於開頭句時，重建句列隊列
       if (currentSentenceIndex === 0) {
         moduleSentenceQueue = buildModuleSentenceQueue(subKey);
       }
@@ -728,12 +737,16 @@ function speakSectionTour(sectionIdx) {
       if (currentSentenceIndex < moduleSentenceQueue.length) {
         const item = moduleSentenceQueue[currentSentenceIndex];
 
-        // 若朗讀項目包含卡片翻轉動作，觸發翻牌動效！
+        // 觸發精準翻牌動效與置中定位
         if (item.cardIdx !== undefined) {
           const cardDom = document.getElementById(`card_${subKey}_${item.cardIdx}`);
           if (cardDom) {
-            cardDom.classList.add('flipped');
-            cardDom.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if (item.flipState === true) {
+              cardDom.classList.add('flipped');
+            } else {
+              cardDom.classList.remove('flipped');
+            }
+            cardDom.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
           }
         }
 
@@ -741,15 +754,13 @@ function speakSectionTour(sectionIdx) {
           if (isTourActive && !isPaused) {
             currentSentenceIndex++;
             if (currentSentenceIndex < moduleSentenceQueue.length) {
-              speakSectionTour(1); // 繼續朗讀該模組下一句
+              speakSectionTour(1);
             } else {
-              // 該模組全文朗讀完成，準備前往下一個模組！
               currentSentenceIndex = 0;
               if (currentSubModuleIndex + 1 < moduleSubKeys.length) {
                 currentSubModuleIndex++;
                 speakSectionTour(1);
               } else {
-                // 四個模組完全深度導讀完成，進入下一個大區塊 (互動實驗室)
                 currentTourSectionIndex = 2;
                 currentSubModuleIndex = 0;
                 currentSentenceIndex = 0;
