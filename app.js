@@ -88,7 +88,7 @@ const i18n = {
     siteTitle: 'Vibe Coding AI Agent 雙語學習平台',
     navSummary: '執行摘要', navModules: '核心模組', navLab: '互動實驗室', navResources: '系統藍圖', navTracker: '學習歷程',
     heroPill: 'AI Agent 現代導航哲學',
-    heroTitle: '告別「寫行行語法」，邁向「意圖與架構導航」的 Vibe Coding 時代',
+    heroTitle: '告別「逐行手寫程式碼」，邁向「意圖與架構導航」的 Vibe Coding 時代',
     heroDesc: '專為程式零基礎的商管學生設計。將 AI Agent 視為【馬車到汽車】的典範轉移，學會運用三大角色（管家、教練、工程師團隊）與四大工程要素，輕鬆掌控自動化系統開發與維護。',
     btnStartLearn: '開始學習課程', btnListenSummary: '朗讀全站總導覽',
     btnListenModule: '朗讀本單元內容', btnListenLab: '朗讀實驗室指南', btnListenTracker: '朗讀歷程統計',
@@ -115,7 +115,7 @@ const i18n = {
     siteTitle: 'Vibe Coding AI Agent Learning Platform',
     navSummary: 'Summary', navModules: 'Modules', navLab: 'Lab', navResources: 'Blueprint', navTracker: 'Tracker',
     heroPill: 'Modern Navigation Philosophy',
-    heroTitle: 'Shift to Intent & Architecture Navigation (Vibe Coding)',
+    heroTitle: 'From Line-by-Line Coding to Intent & Architecture Steering (Vibe Coding)',
     heroDesc: 'Designed for business students with zero coding background. View AI Agents as a shift from carriages to automobiles. Master 3 roles and 4 pillars for sustainable automation.',
     btnStartLearn: 'Start Learning', btnListenSummary: 'Read Full Course Tour',
     btnListenModule: 'Read This Module', btnListenLab: 'Read Lab Guide', btnListenTracker: 'Read Progress Report',
@@ -703,8 +703,8 @@ function speakSectionTour(sectionIdx) {
   switch (secId) {
     case 'summary':
       textToRead = currentLang === 'zh'
-        ? `執行摘要。告別寫行行語法，邁向意圖與架構導航的 Vibe Coding 時代。將 AI Agent 視為從馬車到汽車的典範轉移，運用三大角色與四大工程要素。`
-        : `Executive Summary. Shift to Intent and Architecture Navigation in Vibe Coding. View AI Agent as a shift from carriage to car.`;
+        ? `執行摘要。告別逐行手寫程式碼，邁向意圖與架構導航的 Vibe Coding 時代。將 AI Agent 視為從馬車到汽車的典範轉移，運用三大角色與四大工程要素。`
+        : `Executive Summary. From Line-by-Line Coding to Intent and Architecture Steering in Vibe Coding. View AI Agent as a shift from carriage to car.`;
       
       speakTextWithElement(textToRead, targetEl, () => {
         if (isTourActive && !isPaused) {
